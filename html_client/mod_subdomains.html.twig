@@ -1,0 +1,213 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Subdomains'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>{{ 'Subdomains'|trans }}</h1>
+    <p>{{ 'Manage your subdomains on CyberPanel'|trans }}</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Your subdomains'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                {% if subdomains|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Subdomain'|trans }}</th>
+                                <th>{{ 'Parent Domain'|trans }}</th>
+                                <th>{{ 'Created at'|trans }}</th>
+                                <th>{{ 'Actions'|trans }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subdomain in subdomains %}
+                            <tr>
+                                <td>{{ subdomain.full_domain }}</td>
+                                <td>{{ subdomain.domain_name }}</td>
+                                <td>{{ subdomain.created_at|date('Y-m-d') }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger delete-subdomain" 
+                                            data-domain-id="{{ subdomain.domain_id }}" 
+                                            data-subdomain-id="{{ subdomain.id }}"
+                                            data-subdomain-name="{{ subdomain.full_domain }}">
+                                        {{ 'Delete'|trans }}
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">{{ 'No subdomains found'|trans }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Create subdomain'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <form id="createSubdomainForm">
+                    <input type="hidden" name="id" value="{{ service_id }}">
+                    
+                    <div class="mb-3">
+                        <label for="domain_id" class="form-label">{{ 'Parent domain'|trans }}</label>
+                        <select class="form-select" id="domain_id" name="domain_id" required>
+                            <option value="">{{ 'Select domain'|trans }}</option>
+                            {% for domain in domains %}
+                            <option value="{{ domain.id }}">{{ domain.domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subdomain" class="form-label">{{ 'Subdomain name'|trans }}</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="subdomain" name="subdomain" required>
+                            <span class="input-group-text">.</span>
+                            <span class="input-group-text" id="parent-domain-display">example.com</span>
+                        </div>
+                        <div class="form-text">{{ 'Enter only the subdomain part (e.g., "blog" for blog.example.com)'|trans }}</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="createSubdomainButton">{{ 'Create subdomain'|trans }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteSubdomainModal" tabindex="-1" aria-labelledby="deleteSubdomainModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSubdomainModalLabel">{{ 'Delete Subdomain'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'Are you sure you want to delete the subdomain:'|trans }} <strong id="subdomain-to-delete"></strong>?</p>
+                <p>{{ 'This action cannot be undone!'|trans }}</p>
+                <form id="deleteSubdomainForm">
+                    <input type="hidden" name="id" value="{{ service_id }}">
+                    <input type="hidden" name="domain_id" id="deleteDomainId" value="">
+                    <input type="hidden" name="subdomain_id" id="deleteSubdomainId" value="">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                <button type="button" class="btn btn-danger" id="deleteSubdomainButton">{{ 'Delete'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update parent domain display
+        const domainSelect = document.getElementById('domain_id');
+        const parentDomainDisplay = document.getElementById('parent-domain-display');
+        
+        domainSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                parentDomainDisplay.textContent = selectedOption.textContent;
+            } else {
+                parentDomainDisplay.textContent = 'example.com';
+            }
+        });
+        
+        // Create subdomain
+        const createSubdomainForm = document.getElementById('createSubdomainForm');
+        const createSubdomainButton = document.getElementById('createSubdomainButton');
+        
+        createSubdomainForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (this.checkValidity()) {
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Show loading
+                createSubdomainButton.disabled = true;
+                createSubdomainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Creating...'|trans }}';
+                
+                // Send AJAX request
+                bb.post('client/cyberpanel/create_subdomain', data, function(result) {
+                    bb.msg('Subdomain has been created successfully.');
+                    
+                    // Reset form and button
+                    createSubdomainForm.reset();
+                    createSubdomainButton.disabled = false;
+                    createSubdomainButton.textContent = '{{ 'Create subdomain'|trans }}';
+                    
+                    // Reload page to show new subdomain
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                });
+            }
+        });
+        
+        // Delete subdomain
+        const deleteSubdomainButtons = document.querySelectorAll('.delete-subdomain');
+        const deleteSubdomainModal = new bootstrap.Modal(document.getElementById('deleteSubdomainModal'));
+        const deleteSubdomainButton = document.getElementById('deleteSubdomainButton');
+        const deleteSubdomainForm = document.getElementById('deleteSubdomainForm');
+        const subdomainToDelete = document.getElementById('subdomain-to-delete');
+        const deleteDomainIdInput = document.getElementById('deleteDomainId');
+        const deleteSubdomainIdInput = document.getElementById('deleteSubdomainId');
+        
+        deleteSubdomainButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const domainId = this.getAttribute('data-domain-id');
+                const subdomainId = this.getAttribute('data-subdomain-id');
+                const subdomainName = this.getAttribute('data-subdomain-name');
+                
+                deleteDomainIdInput.value = domainId;
+                deleteSubdomainIdInput.value = subdomainId;
+                subdomainToDelete.textContent = subdomainName;
+                
+                deleteSubdomainModal.show();
+            });
+        });
+        
+        deleteSubdomainButton.addEventListener('click', function() {
+            const formData = new FormData(deleteSubdomainForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Show loading
+            deleteSubdomainButton.disabled = true;
+            deleteSubdomainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Deleting...'|trans }}';
+            
+            // Send AJAX request
+            bb.post('client/cyberpanel/delete_subdomain', data, function(result) {
+                deleteSubdomainModal.hide();
+                bb.msg('Subdomain has been deleted successfully.');
+                
+                // Reset button
+                deleteSubdomainButton.disabled = false;
+                deleteSubdomainButton.textContent = '{{ 'Delete'|trans }}';
+                
+                // Reload page to update subdomain list
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1000);
+            });
+        });
+    });
+</script>
+{% endblock %}

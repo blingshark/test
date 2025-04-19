@@ -1,0 +1,200 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Domains'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>{{ 'Domains'|trans }}</h1>
+    <p>{{ 'Manage your domains on CyberPanel'|trans }}</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{{ 'Your domains'|trans }}</h5>
+    </div>
+    <div class="card-body">
+        {% if domains|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{{ 'Domain'|trans }}</th>
+                        <th>{{ 'Main'|trans }}</th>
+                        <th>{{ 'Created at'|trans }}</th>
+                        <th>{{ 'Actions'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for domain in domains %}
+                    <tr>
+                        <td>{{ domain.domain }}</td>
+                        <td>{{ domain.is_main ? 'Yes'|trans : 'No'|trans }}</td>
+                        <td>{{ domain.created_at|date('Y-m-d') }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ 'hosting/cyberpanel/domain'|link }}/{{ service_id }}/{{ domain.id }}" class="btn btn-sm btn-primary">{{ 'Manage'|trans }}</a>
+                                <button type="button" class="btn btn-sm btn-success install-wp" data-domain-id="{{ domain.id }}">{{ 'Install WordPress'|trans }}</button>
+                                <button type="button" class="btn btn-sm btn-warning reset-site" data-domain-id="{{ domain.id }}">{{ 'Reset Site'|trans }}</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">{{ 'No domains found'|trans }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="installWPModal" tabindex="-1" aria-labelledby="installWPModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="installWPModalLabel">{{ 'Install WordPress'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                <form id="installWPForm">
+                    <input type="hidden" name="id" value="{{ service_id }}">
+                    <input type="hidden" name="domain_id" id="wpDomainId" value="">
+                    <input type="hidden" name="app" value="wordpress">
+                    
+                    <div class="mb-3">
+                        <label for="wpEmail" class="form-label">{{ 'Admin email'|trans }}</label>
+                        <input type="email" class="form-control" id="wpEmail" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wpTitle" class="form-label">{{ 'Site title'|trans }}</label>
+                        <input type="text" class="form-control" id="wpTitle" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wpUsername" class="form-label">{{ 'Admin username'|trans }}</label>
+                        <input type="text" class="form-control" id="wpUsername" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wpPassword" class="form-label">{{ 'Admin password'|trans }}</label>
+                        <input type="password" class="form-control" id="wpPassword" name="password" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wpPath" class="form-label">{{ 'Installation path'|trans }}</label>
+                        <input type="text" class="form-control" id="wpPath" name="path" value="/" required>
+                        <div class="form-text">{{ 'Leave as "/" for root installation or specify a subdirectory'|trans }}</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                <button type="button" class="btn btn-primary" id="installWPButton">{{ 'Install'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resetSiteModal" tabindex="-1" aria-labelledby="resetSiteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetSiteModalLabel">{{ 'Reset Website'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'Are you sure you want to reset this website? This will delete all files and databases associated with it. This action cannot be undone!'|trans }}</p>
+                <form id="resetSiteForm">
+                    <input type="hidden" name="id" value="{{ service_id }}">
+                    <input type="hidden" name="domain_id" id="resetDomainId" value="">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                <button type="button" class="btn btn-danger" id="resetSiteButton">{{ 'Reset Website'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Install WordPress
+        const installWPButtons = document.querySelectorAll('.install-wp');
+        const wpDomainIdInput = document.getElementById('wpDomainId');
+        const installWPModal = new bootstrap.Modal(document.getElementById('installWPModal'));
+        const installWPButton = document.getElementById('installWPButton');
+        const installWPForm = document.getElementById('installWPForm');
+        
+        installWPButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                wpDomainIdInput.value = this.getAttribute('data-domain-id');
+                installWPModal.show();
+            });
+        });
+        
+        installWPButton.addEventListener('click', function() {
+            if (installWPForm.checkValidity()) {
+                const formData = new FormData(installWPForm);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Show loading
+                installWPButton.disabled = true;
+                installWPButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Installing...'|trans }}';
+                
+                // Send AJAX request
+                bb.post('client/cyberpanel/install_application', data, function(result) {
+                    installWPModal.hide();
+                    bb.msg('WordPress installation has been started. This may take a few minutes to complete.');
+                    
+                    // Reset form and button
+                    installWPForm.reset();
+                    installWPButton.disabled = false;
+                    installWPButton.textContent = '{{ 'Install'|trans }}';
+                });
+            } else {
+                installWPForm.reportValidity();
+            }
+        });
+        
+// Reset site
+        const resetSiteButtons = document.querySelectorAll('.reset-site');
+        const resetDomainIdInput = document.getElementById('resetDomainId');
+        const resetSiteModal = new bootstrap.Modal(document.getElementById('resetSiteModal'));
+        const resetSiteButton = document.getElementById('resetSiteButton');
+        const resetSiteForm = document.getElementById('resetSiteForm');
+        
+        resetSiteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                resetDomainIdInput.value = this.getAttribute('data-domain-id');
+                resetSiteModal.show();
+            });
+        });
+        
+        resetSiteButton.addEventListener('click', function() {
+            const formData = new FormData(resetSiteForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Show loading
+            resetSiteButton.disabled = true;
+            resetSiteButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Resetting...'|trans }}';
+            
+            // Send AJAX request
+            bb.post('client/cyberpanel/reset_website', data, function(result) {
+                resetSiteModal.hide();
+                bb.msg('Website has been reset successfully.');
+                
+                // Reset button
+                resetSiteButton.disabled = false;
+                resetSiteButton.textContent = '{{ 'Reset Website'|trans }}';
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+

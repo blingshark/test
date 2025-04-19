@@ -1,0 +1,85 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Websites'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>{{ 'Websites'|trans }}</h1>
+    <p>{{ 'Manage your websites hosted with CyberPanel'|trans }}</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{{ 'Your websites'|trans }}</h5>
+    </div>
+    <div class="card-body">
+        {% if domains|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{{ 'Domain'|trans }}</th>
+                        <th>{{ 'Main'|trans }}</th>
+                        <th>{{ 'Created at'|trans }}</th>
+                        <th>{{ 'Actions'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for domain in domains %}
+                    <tr>
+                        <td>{{ domain.domain }}</td>
+                        <td>{{ domain.is_main ? 'Yes'|trans : 'No'|trans }}</td>
+                        <td>{{ domain.created_at|date('Y-m-d') }}</td>
+                        <td>
+                            <a href="{{ 'hosting/cyberpanel/domain'|link }}/{{ service_id }}/{{ domain.id }}" class="btn btn-sm btn-primary">{{ 'Manage'|trans }}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">{{ 'No websites found'|trans }}</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if service %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{{ 'Service details'|trans }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Package'|trans }}</label>
+                    <p class="form-control-static">{{ service.package }}</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Username'|trans }}</label>
+                    <p class="form-control-static">{{ service.username }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Created at'|trans }}</label>
+                    <p class="form-control-static">{{ service.created_at|date('Y-m-d') }}</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Updated at'|trans }}</label>
+                    <p class="form-control-static">{{ service.updated_at|date('Y-m-d') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

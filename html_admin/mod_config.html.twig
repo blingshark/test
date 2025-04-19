@@ -1,0 +1,133 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'CyberPanel Configuration'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>{{ 'CyberPanel Configuration'|trans }}</h1>
+    <p>{{ 'Configure the CyberPanel module settings'|trans }}</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{{ 'Configuration'|trans }}</h5>
+    </div>
+    <div class="card-body">
+        <form id="configForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="cyberpanel_url" class="form-label">{{ 'CyberPanel URL'|trans }}</label>
+                        <input type="url" class="form-control" id="cyberpanel_url" name="cyberpanel_url" value="{{ config.cyberpanel_url }}" required>
+                        <div class="form-text">{{ 'Full URL to your CyberPanel installation (e.g., https://cyberpanel.example.com)'|trans }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="api_key" class="form-label">{{ 'API Key'|trans }}</label>
+                        <input type="password" class="form-control" id="api_key" name="api_key" value="{{ config.api_key }}" required>
+                        <div class="form-text">{{ 'CyberPanel API key for authentication'|trans }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="admin_username" class="form-label">{{ 'Admin Username'|trans }}</label>
+                        <input type="text" class="form-control" id="admin_username" name="admin_username" value="{{ config.admin_username }}" required>
+                        <div class="form-text">{{ 'Username of the CyberPanel admin account'|trans }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="default_package" class="form-label">{{ 'Default Package'|trans }}</label>
+                        <input type="text" class="form-control" id="default_package" name="default_package" value="{{ config.default_package|default('Default') }}">
+                        <div class="form-text">{{ 'Default package name to use when creating websites'|trans }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="verify_ssl" name="verify_ssl" value="1" {% if config.verify_ssl %}checked{% endif %}>
+                    <label class="form-check-label" for="verify_ssl">
+                        {{ 'Verify SSL'|trans }}
+                    </label>
+                    <div class="form-text">{{ 'Enable or disable SSL verification for API requests'|trans }}</div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary" id="saveConfigButton">{{ 'Save configuration'|trans }}</button>
+                <button type="button" class="btn btn-secondary" id="testConnectionButton">{{ 'Test connection'|trans }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const configForm = document.getElementById('configForm');
+        const saveConfigButton = document.getElementById('saveConfigButton');
+        const testConnectionButton = document.getElementById('testConnectionButton');
+        
+        configForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (this.checkValidity()) {
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Handle checkbox
+                if (!data.verify_ssl) {
+                    data.verify_ssl = "0";
+                }
+                
+                // Show loading
+                saveConfigButton.disabled = true;
+                saveConfigButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Saving...'|trans }}';
+                
+                // Send AJAX request
+                bb.post('admin/cyberpanel/save_config', data, function(result) {
+                    bb.msg('Configuration has been saved successfully.');
+                    
+                    // Reset button
+                    saveConfigButton.disabled = false;
+                    saveConfigButton.textContent = '{{ 'Save configuration'|trans }}';
+                });
+            }
+        });
+        
+        testConnectionButton.addEventListener('click', function() {
+            const formData = new FormData(configForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Handle checkbox
+            if (!data.verify_ssl) {
+                data.verify_ssl = "0";
+            }
+            
+            // Show loading
+            testConnectionButton.disabled = true;
+            testConnectionButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Testing...'|trans }}';
+            
+            // Send AJAX request
+            bb.post('admin/cyberpanel/test_connection', data, function(result) {
+                if (result.result) {
+                    bb.msg(result.message || 'Connection successful.');
+                } else {
+                    bb.error(result.error || 'Connection failed.');
+                }
+                
+                // Reset button
+                testConnectionButton.disabled = false;
+                testConnectionButton.textContent = '{{ 'Test connection'|trans }}';
+            });
+        });
+    });
+</script>
+{% endblock %}

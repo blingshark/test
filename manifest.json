@@ -1,0 +1,48 @@
+{
+    "id": "cyberpanel",
+    "type": "hosting",
+    "name": "CyberPanel",
+    "description": "CyberPanel hosting management module for FOSSBilling",
+    "icon_url": "icon.png",
+    "version": "1.0.0",
+    "author": "FOSSBilling Community",
+    "author_url": "https://fossbilling.org/",
+    "project_url": "https://github.com/fossbilling/cyberpanel-module",
+    "minimum_boxbilling_version": "0.6.22",
+    "public_interfaces": {
+        "client": {
+            "index": {
+                "title": "Websites",
+                "icon": "fa-globe",
+                "page": "mod_index"
+            },
+            "domains": {
+                "title": "Domains",
+                "icon": "fa-sitemap",
+                "page": "mod_domains"
+            },
+            "subdomains": {
+                "title": "Subdomains",
+                "icon": "fa-link",
+                "page": "mod_subdomains"
+            },
+            "emails": {
+                "title": "Email Accounts",
+                "icon": "fa-envelope",
+                "page": "mod_emails"
+            }
+        },
+        "admin": {
+            "index": {
+                "title": "Overview",
+                "icon": "fa-dashboard",
+                "page": "mod_index"
+            },
+            "config": {
+                "title": "Configuration",
+                "icon": "fa-cogs",
+                "page": "mod_config"
+            }
+        }
+    }
+}

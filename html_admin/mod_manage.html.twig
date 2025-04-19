@@ -1,0 +1,232 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Manage CyberPanel Service'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1>{{ 'Manage CyberPanel Service'|trans }}</h1>
+            <p>{{ 'Service ID:'|trans }} {{ service.id }}</p>
+        </div>
+        <div>
+            <a href="{{ 'client/order/manage'|alink }}/{{ service.id }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> {{ 'Back to order'|trans }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Service details'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Client'|trans }}</label>
+                    <p class="form-control-static">
+                        <a href="{{ 'client/manage'|alink }}/{{ service.client_id }}">{{ 'View client'|trans }}</a>
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Package'|trans }}</label>
+                    <p class="form-control-static">{{ service.package }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Username'|trans }}</label>
+                    <p class="form-control-static">{{ service.username }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Password'|trans }}</label>
+                    <p class="form-control-static">{{ service.password }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Created at'|trans }}</label>
+                    <p class="form-control-static">{{ service.created_at|date('Y-m-d H:i:s') }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Updated at'|trans }}</label>
+                    <p class="form-control-static">{{ service.updated_at|date('Y-m-d H:i:s') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Domains'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                {% if domains|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Domain'|trans }}</th>
+                                <th>{{ 'Main'|trans }}</th>
+                                <th>{{ 'Created at'|trans }}</th>
+                                <th>{{ 'Actions'|trans }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for domain in domains %}
+                            <tr>
+                                <td>{{ domain.domain }}</td>
+                                <td>{{ domain.is_main ? 'Yes'|trans : 'No'|trans }}</td>
+                                <td>{{ domain.created_at|date('Y-m-d') }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger delete-domain" 
+                                            data-domain-id="{{ domain.id }}"
+                                            data-domain-name="{{ domain.domain }}">
+                                        {{ 'Delete'|trans }}
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">{{ 'No domains found'|trans }}</div>
+                {% endif %}
+                
+                <hr>
+                
+                <h6>{{ 'Add domain'|trans }}</h6>
+                <form id="addDomainForm">
+                    <input type="hidden" name="id" value="{{ service.id }}">
+                    
+                    <div class="mb-3">
+                        <label for="domain" class="form-label">{{ 'Domain name'|trans }}</label>
+                        <input type="text" class="form-control" id="domain" name="domain" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_main" name="is_main" value="1">
+                            <label class="form-check-label" for="is_main">
+                                {{ 'Set as main domain'|trans }}
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="addDomainButton">{{ 'Add domain'|trans }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteDomainModal" tabindex="-1" aria-labelledby="deleteDomainModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteDomainModalLabel">{{ 'Delete Domain'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'Are you sure you want to delete the domain:'|trans }} <strong id="domain-to-delete"></strong>?</p>
+                <p>{{ 'This action cannot be undone!'|trans }}</p>
+                <form id="deleteDomainForm">
+                    <input type="hidden" name="id" id="deleteDomainId" value="">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                <button type="button" class="btn btn-danger" id="deleteDomainButton">{{ 'Delete'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add domain
+        const addDomainForm = document.getElementById('addDomainForm');
+        const addDomainButton = document.getElementById('addDomainButton');
+        
+        addDomainForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (this.checkValidity()) {
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                
+                // Handle checkbox
+                if (!data.is_main) {
+                    data.is_main = "0";
+                }
+                
+                // Show loading
+                addDomainButton.disabled = true;
+                addDomainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Adding...'|trans }}';
+                
+                // Send AJAX request
+                bb.post('admin/cyberpanel/add_domain', data, function(result) {
+                    bb.msg('Domain has been added successfully.');
+                    
+                    // Reset form and button
+                    addDomainForm.reset();
+                    addDomainButton.disabled = false;
+                    addDomainButton.textContent = '{{ 'Add domain'|trans }}';
+                    
+                    // Reload page to show new domain
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                });
+            }
+        });
+        
+        // Delete domain
+        const deleteDomainButtons = document.querySelectorAll('.delete-domain');
+        const deleteDomainModal = new bootstrap.Modal(document.getElementById('deleteDomainModal'));
+        const deleteDomainButton = document.getElementById('deleteDomainButton');
+        const deleteDomainForm = document.getElementById('deleteDomainForm');
+        const domainToDelete = document.getElementById('domain-to-delete');
+        const deleteDomainIdInput = document.getElementById('deleteDomainId');
+        
+        deleteDomainButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const domainId = this.getAttribute('data-domain-id');
+                const domainName = this.getAttribute('data-domain-name');
+                
+                deleteDomainIdInput.value = domainId;
+                domainToDelete.textContent = domainName;
+                
+                deleteDomainModal.show();
+            });
+        });
+        
+        deleteDomainButton.addEventListener('click', function() {
+            const formData = new FormData(deleteDomainForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Show loading
+            deleteDomainButton.disabled = true;
+            deleteDomainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ 'Deleting...'|trans }}';
+            
+            // Send AJAX request
+            bb.post('admin/cyberpanel/delete_domain', data, function(result) {
+                deleteDomainModal.hide();
+                bb.msg('Domain has been deleted successfully.');
+                
+                // Reset button
+                deleteDomainButton.disabled = false;
+                deleteDomainButton.textContent = '{{ 'Delete'|trans }}';
+                
+                // Reload page to update domain list
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1000);
+            });
+        });
+    });
+</script>
+{% endblock %}

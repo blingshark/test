@@ -1,0 +1,83 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'CyberPanel Overview'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>{{ 'CyberPanel Module'|trans }}</h1>
+    <p>{{ 'Manage CyberPanel hosting services'|trans }}</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Module information'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Name'|trans }}</label>
+                    <p class="form-control-static">{{ 'CyberPanel'|trans }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Description'|trans }}</label>
+                    <p class="form-control-static">{{ 'CyberPanel hosting management module for FOSSBilling'|trans }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Version'|trans }}</label>
+                    <p class="form-control-static">1.0.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Quick links'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ 'hosting/cyberpanel/config'|alink }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-cogs me-2"></i> {{ 'Configuration'|trans }}
+                    </a>
+                    <a href="https://docs.cyberpanel.net/" target="_blank" class="list-group-item list-group-item-action">
+                        <i class="fas fa-book me-2"></i> {{ 'CyberPanel Documentation'|trans }}
+                    </a>
+                    <a href="https://forum.fossbilling.org/" target="_blank" class="list-group-item list-group-item-action">
+                        <i class="fas fa-users me-2"></i> {{ 'FOSSBilling Community'|trans }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">{{ 'Usage guide'|trans }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-4">
+            <h6>{{ '1. Configure the module'|trans }}</h6>
+            <p>{{ 'Visit the Configuration page to set up your CyberPanel API details.'|trans }}</p>
+        </div>
+        
+        <div class="mb-4">
+            <h6>{{ '2. Create a server'|trans }}</h6>
+            <p>{{ 'Go to Configuration > Servers and create a new server with CyberPanel as the server manager.'|trans }}</p>
+        </div>
+        
+        <div class="mb-4">
+            <h6>{{ '3. Create a hosting product'|trans }}</h6>
+            <p>{{ 'Create a new hosting product and select CyberPanel as the server type. Configure the product settings as needed.'|trans }}</p>
+        </div>
+        
+        <div class="mb-4">
+            <h6>{{ '4. Activate and sell'|trans }}</h6>
+            <p>{{ 'Your CyberPanel hosting product is now ready to be sold to clients.'|trans }}</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

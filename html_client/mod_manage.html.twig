@@ -1,0 +1,63 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Manage Service'|trans }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>{{ 'Manage Hosting Service'|trans }}</h1>
+    <p>{{ 'View and manage your CyberPanel hosting account'|trans }}</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Service details'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Package'|trans }}</label>
+                    <p class="form-control-static">{{ service.package }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Username'|trans }}</label>
+                    <p class="form-control-static">{{ service.username }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Created at'|trans }}</label>
+                    <p class="form-control-static">{{ service.created_at|date('Y-m-d') }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'Updated at'|trans }}</label>
+                    <p class="form-control-static">{{ service.updated_at|date('Y-m-d') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ 'Quick links'|trans }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ 'hosting/cyberpanel/index'|link }}/{{ service_id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-globe me-2"></i> {{ 'Websites'|trans }}
+                    </a>
+                    <a href="{{ 'hosting/cyberpanel/domains'|link }}/{{ service_id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-sitemap me-2"></i> {{ 'Domains'|trans }}
+                    </a>
+                    <a href="{{ 'hosting/cyberpanel/subdomains'|link }}/{{ service_id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-link me-2"></i> {{ 'Subdomains'|trans }}
+                    </a>
+                    <a href="{{ 'hosting/cyberpanel/emails'|link }}/{{ service_id }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-envelope me-2"></i> {{ 'Email accounts'|trans }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
